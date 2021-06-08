@@ -1,11 +1,13 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import cors from 'cors';
 
 import { TaskProps } from './types';
 
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 
 interface CustomRequest extends Request {
   task?: TaskProps;
@@ -112,6 +114,14 @@ app.patch('/tasks/edit/status', verifyIfTaskExists, (request: CustomRequest, res
   const { status } = request.body;
   const { task } = request;
   const { id } = task;
+
+  const verifyIfSomeTaskIsInProgress = tasks.some(task => task.status === status);
+
+  if (verifyIfSomeTaskIsInProgress) {
+    return response.status(400).json({
+      error: "You already have a task in progress, finish it to start another one."
+    });
+  }
 
   const taskEdited: TaskProps = {
     ...task,
